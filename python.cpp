@@ -1,4 +1,3 @@
-#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -7,9 +6,18 @@
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
+#define BYTES_10_MS 320
+
 namespace py = pybind11;
 
 // ----------------------------------------------------------------------------
+
+struct ProcessedAudioChunk {
+  py::bytes audio;
+  bool is_speech;
+
+  ProcessedAudioChunk() : audio("\0", BYTES_10_MS), is_speech(false) {}
+};
 
 class AudioProcessor {
 private:
@@ -21,8 +29,7 @@ public:
   AudioProcessor(int auto_gain, int noise_suppression);
   ~AudioProcessor();
 
-  bool Process10ms(py::array_t<int16_t> audio_input,
-                   py::array_t<int16_t> audio_output);
+  std::unique_ptr<ProcessedAudioChunk> Process10ms(py::bytes audio);
 };
 
 // auto_gain: 0 = disabled, max 31
@@ -62,25 +69,27 @@ AudioProcessor::AudioProcessor(int auto_gain, int noise_suppression)
   this->apm->ApplyConfig(audio_config);
 }
 
-bool AudioProcessor::Process10ms(py::array_t<int16_t> audio_input,
-                                 py::array_t<int16_t> audio_output) {
-  py::buffer_info buffer_input = audio_input.request();
-  py::buffer_info buffer_output = audio_output.request();
+std::unique_ptr<ProcessedAudioChunk>
+AudioProcessor::Process10ms(py::bytes audio) {
+  auto processed_chunk = std::make_unique<ProcessedAudioChunk>();
 
-  if ((buffer_input.ndim != 1) || (buffer_output.ndim != 1)) {
-    throw std::runtime_error("Number of dimensions must be one");
-  }
+  py::buffer_info buffer_input(py::buffer(audio).request());
+  py::buffer_info buffer_output(py::buffer(processed_chunk->audio).request());
 
-  if ((buffer_input.size != 160) || (buffer_output.size != 160)) {
+  if ((buffer_input.size != BYTES_10_MS) ||
+      (buffer_output.size != BYTES_10_MS)) {
     throw std::runtime_error(
-        "Input and output arrays must be 160 samples (10 ms)");
+        "Input and output buffers must be 320 bytes (10 ms)");
   }
 
   this->apm->ProcessStream(static_cast<int16_t *>(buffer_input.ptr),
                            this->stream_config, this->stream_config,
                            static_cast<int16_t *>(buffer_output.ptr));
 
-  return this->apm->GetStatistics().voice_detected.value_or(false);
+  processed_chunk->is_speech =
+      this->apm->GetStatistics().voice_detected.value_or(false);
+
+  return processed_chunk;
 }
 
 AudioProcessor::~AudioProcessor() { delete this->apm; }
@@ -103,6 +112,10 @@ PYBIND11_MODULE(webrtc_noise_gain_cpp, m) {
   py::class_<AudioProcessor>(m, "AudioProcessor")
       .def(py::init<int, int>())
       .def("Process10ms", &AudioProcessor::Process10ms);
+
+  py::class_<ProcessedAudioChunk>(m, "ProcessedAudioChunk")
+      .def_readonly("audio", &ProcessedAudioChunk::audio)
+      .def_readonly("is_speech", &ProcessedAudioChunk::is_speech);
 
 #ifdef VERSION_INFO
   m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

@@ -11,3 +11,6 @@ htmlcov
 /dist/
 __pycache__/
 *.egg-info/
+
+/webrtc-audio-processing/
+/.venv/

@@ -1,5 +1,5 @@
 *
 !setup.py
-!test.py
+!tests/*.py
 !python.cpp
 !webrtc_noise_gain/__init__.py

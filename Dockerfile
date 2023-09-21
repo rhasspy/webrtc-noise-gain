@@ -13,7 +13,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN curl -L 'http://freedesktop.org/software/pulseaudio/webrtc-audio-processing/webrtc-audio-processing-1.3.tar.gz' | \
     tar -xzf - && \
-    mv webrtc-audio-processing* /build
+    mkdir -p /build && \
+    mv webrtc-audio-processing* /build/webrtc-audio-processing
 
 WORKDIR /build
 RUN python3.11 -m venv .venv && \
@@ -21,6 +22,7 @@ RUN python3.11 -m venv .venv && \
     pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools wheel && \
     pip3 install meson ninja && \
+    cd webrtc-audio-processing && \
     meson . build -Dprefix=$PWD/install && \
     ninja -C build && \
     ninja -C build install
@@ -35,20 +37,21 @@ RUN for version in 7 8 9 10 11; do \
     python3 setup.py bdist_wheel; \
     done
 
-RUN export so_path="$(find install -name 'libwebrtc-audio-processing-1.so*' | head -n 1)" && \
+RUN export so_path="$(find webrtc-audio-processing/install -name 'libwebrtc-audio-processing-1.so*' | head -n 1)" && \
     export lib_dir="$(dirname "${so_path}")" && \
     export lib_dir="$(realpath "${lib_dir}")" && \
     export LD_LIBRARY_PATH="${lib_dir}:${LD_LIBRARY_PATH}" && \
     auditwheel repair dist/*.whl
 
 WORKDIR /test
+COPY ./tests/ ./tests/
 RUN for version in 7 8 9 10 11; do \
     "python3.${version}" -m venv ".venv_${version}" && \
     source ".venv_${version}"/bin/activate && \
     pip3 install --upgrade pip && \
     pip3 install --upgrade setuptools wheel && \
-    pip3 install webrtc-noise-gain -f /build/wheelhouse/ && \
-    python3 /build/test.py; \
+    pip3 install pytest webrtc-noise-gain -f /build/wheelhouse/ && \
+    pytest tests; \
     done
 
 # -----------------------------------------------------------------------------
