@@ -8,7 +8,7 @@ from setuptools import setup
 _DIR = Path(__file__).parent
 _INSTALL_DIR = _DIR / "install"
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 lib_dir = next(f.parent for f in _INSTALL_DIR.rglob("*.so*"))
 
@@ -37,7 +37,7 @@ setup(
     description="Noise suppression and automatic gain with webrtc",
     long_description="",
     packages=["webrtc_noise_gain"],
-    install_requires=["numpy"],
+    install_requires=["numpy<2"],
     ext_modules=ext_modules,
     cmdclass={"build_ext": build_ext},
     zip_safe=False,
