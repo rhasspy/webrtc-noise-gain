@@ -39,4 +39,23 @@ if result.is_speech:
 
 ## Building
 
-See `Dockerfile`
+``` sh
+# Install system dependencies
+sudo apt-get install python3 python3-dev python3-pip python3-venv build-essential
+
+# Clone repo
+git clone http://github.com/rhasspy/webrtc-noise-gain.git
+cd webrtc-noise-gain
+
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install --upgrade pip
+pip3 install --upgrade wheel build
+
+# Build
+python3 -m build --wheel
+find dist/
+```
+
+See also `Dockerfile`

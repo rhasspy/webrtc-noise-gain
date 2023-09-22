@@ -1,0 +1,11 @@
+*.o
+*.pc
+.*.swp
+*~
+.deps*
+.dirstamp
+.libs*
+build/
+depcomp
+install/
+subprojects/*/
