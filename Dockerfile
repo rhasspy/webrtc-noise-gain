@@ -33,10 +33,13 @@ RUN for version in 7 8 9 10 11; do \
     pytest tests; \
     done
 
+WORKDIR /build
+RUN find dist -name '*.whl' | xargs auditwheel repair
+
 # -----------------------------------------------------------------------------
 
 FROM scratch
 ARG TARGETARCH
 ARG TARGETVARIANT
 
-COPY --from=build /build/dist/ ./
+COPY --from=build /build/wheelhouse/ ./
