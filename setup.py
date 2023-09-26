@@ -1,15 +1,17 @@
+import os
 import platform
 from pathlib import Path
 
 # Available at setup time due to pyproject.toml
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
+from setuptools._distutils.unixccompiler import UnixCCompiler
 
 _DIR = Path(__file__).parent
 _SOURCE_DIR = _DIR / "webrtc-audio-processing"
 _WEBRTC_DIR = _SOURCE_DIR / "webrtc-audio-processing-1"
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # webrtc/
 #   rtc_base/
@@ -342,22 +344,31 @@ common_cflags = [
 
 fft_sources = ["fft.c"]
 
+absl_sources = []
+
 # -----------------------------------------------------------------------------
 
 libraries = []
 system = platform.system().lower()
 machine = platform.machine().lower()
 system_cflags = []
-machine_cflags = []
+
+# Architecture detection was removed from rtc_base/system/arch.h
+# This was causing errors when cross-compiling on Github.
+machine_cflags = ["-DWEBRTC_ARCH_LITTLE_ENDIAN"]
 
 have_neon = True
+
 
 if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 elif system == "darwin":
-    system_cflags += ["-DWEBRTC_MAC"]
+    system_cflags += ["-DWEBRTC_MAC", "-DWEBRTC_POSIX"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
+
+    # Not using std::optional
+    absl_sources = ["absl/types/bad_optional_access.cc"]
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
@@ -373,7 +384,11 @@ else:
 
 if machine in ("aarch64", "armv8", "arm64"):
     # Assume neon
-    machine_cflags += ["-DWEBRTC_ARCH_ARM64"]
+    machine_cflags += [
+        "-DWEBRTC_ARCH_ARM64",
+        "-DWEBRTC_ARCH_ARM_FAMILY",
+        "-DWEBRTC_ARCH_64_BITS",
+    ]
 
     if have_neon:
         machine_cflags += ["-DWEBRTC_HAS_NEON"]
@@ -396,6 +411,17 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
         "-mavx2",
         "-mfma",
     ]
+    if machine in ("x86_64", "amd64"):
+        machine_cflags += [
+            "-DWEBRTC_ARCH_X86_64",
+            "-DWEBRTC_ARCH_64_BITS",
+        ]
+    else:
+        machine_cflags += [
+            "-DWEBRTC_ARCH_X86",
+            "-DWEBRTC_ARCH_32_BITS",
+        ]
+
     webrtc_audio_processing_sources += [
         "aec3/adaptive_fir_filter_avx2.cc",
         "aec3/adaptive_fir_filter_erl_avx2.cc",
@@ -412,8 +438,11 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
         "resampler/sinc_resampler_avx2.cc",
     ]
 elif machine in ("armv7", "armv7l"):
-    # Assume neon
-    machine_cflags += ["-DWEBRTC_ARCH_ARM_V7"]
+    machine_cflags += [
+        "-DWEBRTC_ARCH_ARM_V7",
+        "-DWEBRTC_ARCH_ARM_FAMILY",
+        "-DWEBRTC_ARCH_32_BITS",
+    ]
     if have_neon:
         machine_cflags += ["-DWEBRTC_HAS_NEON", "-mfpu=neon"]
         common_audio_sources += [
@@ -428,18 +457,59 @@ elif machine in ("armv7", "armv7l"):
             "aecm/aecm_core_neon.cc",
         ]
 elif machine in ("armv6", "armhf", "armv6l"):
-    machine_cflags += ["-DWEBRTC_ARCH_ARM", "-DPFFFT_SIMD_DISABLE"]
-    common_audio_sources += [
-        "signal_processing/filter_ar_fast_q12.c",
+    machine_cflags += [
+        "-DWEBRTC_ARCH_ARM",
+        "-DWEBRTC_ARCH_ARM_FAMILY",
+        "-DWEBRTC_ARCH_32_BITS",
+        "-DPFFFT_SIMD_DISABLE",
     ]
 else:
     raise ValueError(f"Unsupported machine: {machine}")
 
 # -----------------------------------------------------------------------------
 
+# https://stackoverflow.com/questions/47872981/python-extension-using-different-compiler-flags-for-a-c-parts-and-c-parts
+cpp_flags = ["-std=c++17"]
+
+
+class PatchedCompiler(UnixCCompiler):
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        _cc_args = cc_args
+
+        # add the C++ flags for source files with extensions listed below
+        if os.path.splitext(src)[-1] in (".cpp", ".cxx", ".cc"):
+            _cc_args = cc_args + cpp_flags
+
+        UnixCCompiler._compile(self, obj, src, ext, _cc_args, extra_postargs, pp_opts)
+
+
+class PatchedBuildExt(build_ext):
+    def build_extensions(self, *args, **kwargs):
+        if self.compiler.compiler_type == "unix":
+            # Replace the compiler
+            old_compiler = self.compiler
+            self.compiler = PatchedCompiler()
+
+            # Copy its attributes
+            for attr, value in old_compiler.__dict__.items():
+                setattr(self.compiler, attr, value)
+        build_ext.build_extensions(self, *args, **kwargs)
+
+
+class PatchedPybind11Extension(Pybind11Extension):
+    @property
+    def cxx_std(self) -> int:
+        return super().cxx_std
+
+    @cxx_std.setter
+    def cxx_std(self, level: int) -> None:
+        pass  # Stop pollution of cflags
+
+
 ext_modules = [
-    Pybind11Extension(
+    PatchedPybind11Extension(
         name="webrtc_noise_gain_cpp",
+        language="c++",
         sources=[str(_DIR / "python.cpp")]
         + [str(_WEBRTC_DIR / "rtc_base" / f) for f in base_sources]
         + [str(_WEBRTC_DIR / "api" / f) for f in api_sources]
@@ -458,7 +528,11 @@ ext_modules = [
         ]
         + [str(_WEBRTC_DIR / "third_party" / "pffft" / f) for f in pffft_sources]
         + [str(_WEBRTC_DIR / "third_party" / "rnnoise" / f) for f in rnnoise_sources]
-        + [str(_WEBRTC_DIR / "common_audio" / f) for f in common_audio_sources],
+        + [str(_WEBRTC_DIR / "common_audio" / f) for f in common_audio_sources]
+        + [
+            str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1" / f)
+            for f in absl_sources
+        ],
         extra_compile_args=common_cflags + system_cflags + machine_cflags,
         define_macros=[("VERSION_INFO", __version__)],
         include_dirs=[
@@ -466,7 +540,6 @@ ext_modules = [
             str(_WEBRTC_DIR),
             str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1"),
         ],
-        cxx_std=17,
         libraries=libraries,
     ),
 ]
@@ -482,7 +555,7 @@ setup(
     long_description="",
     packages=["webrtc_noise_gain"],
     ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
+    cmdclass={"build_ext": PatchedBuildExt},
     zip_safe=False,
     python_requires=">=3.7",
 )
