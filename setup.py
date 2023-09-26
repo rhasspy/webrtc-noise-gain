@@ -444,6 +444,7 @@ else:
 ext_modules = [
     Pybind11Extension(
         name="webrtc_noise_gain_cpp",
+        language="c++",
         sources=[str(_DIR / "python.cpp")]
         + [str(_WEBRTC_DIR / "rtc_base" / f) for f in base_sources]
         + [str(_WEBRTC_DIR / "api" / f) for f in api_sources]
@@ -470,6 +471,7 @@ ext_modules = [
             str(_WEBRTC_DIR),
             str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1"),
         ],
+        cxx_std=None,
         libraries=libraries,
     ),
 ]
