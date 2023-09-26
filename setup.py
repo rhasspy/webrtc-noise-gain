@@ -354,7 +354,7 @@ machine_cflags = []
 have_neon = True
 
 # Only for C++
-os.environ["CPPFLAGS"] = "-std=c++17"
+# os.environ["CPPFLAGS"] = "-std=c++17"
 
 if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
