@@ -448,8 +448,6 @@ class PatchedCompiler(UnixCCompiler):
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
         _cc_args = cc_args
 
-        assert False, cc_args
-
         # add the C++ flags for source files with extensions listed below
         if os.path.splitext(src)[-1] in (".cpp", ".cxx", ".cc"):
             _cc_args = cc_args + cpp_flags
