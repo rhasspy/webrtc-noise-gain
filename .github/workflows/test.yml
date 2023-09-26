@@ -33,11 +33,14 @@ jobs:
   #         .venv/bin/pytest -vv tests
   test_macos:
     name: "macos test: ${{ matrix.arch }}"
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       matrix:
-        arch: [amd64]
+        os: ['macos-12']
+        include:
+          - os: 'macos-12'
+            triplet: 'x64-macosx'
     steps:
       - uses: actions/checkout@v3
       - name: venv
