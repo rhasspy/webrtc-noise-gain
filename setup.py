@@ -441,8 +441,19 @@ else:
 
 # -----------------------------------------------------------------------------
 
+
+class PatchedExtension(Pybind11Extension):
+    @property
+    def cxx_std(self) -> int:
+        return super().cxx_std
+
+    @cxx_std.setter
+    def cxx_std(self, level: int) -> None:
+        pass
+
+
 ext_modules = [
-    Pybind11Extension(
+    PatchedExtension(
         name="webrtc_noise_gain_cpp",
         language="c++",
         sources=[str(_DIR / "python.cpp")]
@@ -471,7 +482,6 @@ ext_modules = [
             str(_WEBRTC_DIR),
             str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1"),
         ],
-        cxx_std=None,
         libraries=libraries,
     ),
 ]
