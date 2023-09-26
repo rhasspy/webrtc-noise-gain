@@ -358,7 +358,7 @@ have_neon = True
 if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 elif system == "darwin":
-    system_cflags += ["-DWEBRTC_MAC"]
+    system_cflags += ["-DWEBRTC_MAC", "-DWEBRTC_POSIX"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
 elif system == "windows":
