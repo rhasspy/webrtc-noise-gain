@@ -352,6 +352,9 @@ libraries = []
 system = platform.system().lower()
 machine = platform.machine().lower()
 system_cflags = []
+
+# Architecture detection was removed from rtc_base/system/arch.h
+# This was causing errors when cross-compiling on Github.
 machine_cflags = ["-DWEBRTC_ARCH_LITTLE_ENDIAN"]
 
 have_neon = True
@@ -459,9 +462,6 @@ elif machine in ("armv6", "armhf", "armv6l"):
         "-DWEBRTC_ARCH_ARM_FAMILY",
         "-DWEBRTC_ARCH_32_BITS",
         "-DPFFFT_SIMD_DISABLE",
-    ]
-    common_audio_sources += [
-        "signal_processing/filter_ar_fast_q12.c",
     ]
 else:
     raise ValueError(f"Unsupported machine: {machine}")
