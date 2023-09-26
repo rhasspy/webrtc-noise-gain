@@ -346,12 +346,18 @@ fft_sources = ["fft.c"]
 
 libraries = []
 system = platform.system().lower()
+machine = platform.machine().lower()
 system_cflags = []
+machine_cflags = []
+
+have_neon = True
 
 if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 elif system == "darwin":
     system_cflags += ["-DWEBRTC_MAC"]
+    machine = "arm64"  # assume cross-compiling
+    have_neon = False
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
@@ -365,24 +371,23 @@ elif system == "windows":
 else:
     raise ValueError(f"Unsupported system: {system}")
 
-
-machine_cflags = []
-machine = platform.machine().lower()
-
 if machine in ("aarch64", "armv8", "arm64"):
     # Assume neon
-    machine_cflags += ["-DWEBRTC_ARCH_ARM64", "-DWEBRTC_HAS_NEON"]
-    common_audio_sources += [
-        "fir_filter_neon.cc",
-        "resampler/sinc_resampler_neon.cc",
-        "signal_processing/cross_correlation_neon.c",
-        "signal_processing/downsample_fast_neon.c",
-        "signal_processing/min_max_operations_neon.c",
-        "third_party/ooura/fft_size_128/ooura_fft_neon.cc",
-    ]
-    webrtc_audio_processing_sources += [
-        "aecm/aecm_core_neon.cc",
-    ]
+    machine_cflags += ["-DWEBRTC_ARCH_ARM64"]
+
+    if have_neon:
+        machine_cflags += ["-DWEBRTC_HAS_NEON"]
+        common_audio_sources += [
+            "fir_filter_neon.cc",
+            "resampler/sinc_resampler_neon.cc",
+            "signal_processing/cross_correlation_neon.c",
+            "signal_processing/downsample_fast_neon.c",
+            "signal_processing/min_max_operations_neon.c",
+            "third_party/ooura/fft_size_128/ooura_fft_neon.cc",
+        ]
+        webrtc_audio_processing_sources += [
+            "aecm/aecm_core_neon.cc",
+        ]
 elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
     machine_cflags += [
         "-DWEBRTC_ARCH_X86_FAMILY",
@@ -408,18 +413,20 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
     ]
 elif machine in ("armv7", "armv7l"):
     # Assume neon
-    machine_cflags += ["-DWEBRTC_ARCH_ARM_V7", "-DWEBRTC_HAS_NEON", "-mfpu=neon"]
-    common_audio_sources += [
-        "fir_filter_neon.cc",
-        "resampler/sinc_resampler_neon.cc",
-        "signal_processing/cross_correlation_neon.c",
-        "signal_processing/downsample_fast_neon.c",
-        "signal_processing/min_max_operations_neon.c",
-        "third_party/ooura/fft_size_128/ooura_fft_neon.cc",
-    ]
-    webrtc_audio_processing_sources += [
-        "aecm/aecm_core_neon.cc",
-    ]
+    machine_cflags += ["-DWEBRTC_ARCH_ARM_V7"]
+    if have_neon:
+        machine_cflags += ["-DWEBRTC_HAS_NEON", "-mfpu=neon"]
+        common_audio_sources += [
+            "fir_filter_neon.cc",
+            "resampler/sinc_resampler_neon.cc",
+            "signal_processing/cross_correlation_neon.c",
+            "signal_processing/downsample_fast_neon.c",
+            "signal_processing/min_max_operations_neon.c",
+            "third_party/ooura/fft_size_128/ooura_fft_neon.cc",
+        ]
+        webrtc_audio_processing_sources += [
+            "aecm/aecm_core_neon.cc",
+        ]
 elif machine in ("armv6", "armhf", "armv6l"):
     machine_cflags += ["-DWEBRTC_ARCH_ARM", "-DPFFFT_SIMD_DISABLE"]
     common_audio_sources += [
