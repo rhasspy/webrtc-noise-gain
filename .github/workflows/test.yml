@@ -8,39 +8,13 @@ on:
       - master
 
 jobs:
-  # test_linux:
-  #   name: "linux test: ${{ matrix.arch }}"
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       arch: [aarch64, armhf, armv7, amd64, i386]
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: venv
-  #       run: |
-  #         python3 -m venv .venv
-  #         .venv/bin/pip3 install --upgrade pip
-  #     - name: build
-  #       run: |
-  #         .venv/bin/pip3 wheel .
-  #     - name: install
-  #       run: |
-  #         .venv/bin/pip3 install --no-index -f . webrtc-noise-gain
-  #     - name: test
-  #       run: |
-  #         .venv/bin/pip3 install pytest
-  #         .venv/bin/pytest -vv tests
-  test_macos:
-    name: "macos test: ${{ matrix.arch }}"
-    runs-on: ${{ matrix.os }}
+  test_linux:
+    name: "linux test: ${{ matrix.arch }}"
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        os: ['macos-12']
-        include:
-          - os: 'macos-12'
-            triplet: 'x64-macosx'
+        arch: [aarch64, armhf, armv7, amd64, i386]
     steps:
       - uses: actions/checkout@v3
       - name: venv
@@ -57,6 +31,32 @@ jobs:
         run: |
           .venv/bin/pip3 install pytest
           .venv/bin/pytest -vv tests
+  # test_macos:
+  #   name: "macos test: ${{ matrix.arch }}"
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       os: ['macos-12']
+  #       include:
+  #         - os: 'macos-12'
+  #           triplet: 'x64-macosx'
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: venv
+  #       run: |
+  #         python3 -m venv .venv
+  #         .venv/bin/pip3 install --upgrade pip
+  #     - name: build
+  #       run: |
+  #         .venv/bin/pip3 wheel .
+  #     - name: install
+  #       run: |
+  #         .venv/bin/pip3 install --no-index -f . webrtc-noise-gain
+  #     - name: test
+  #       run: |
+  #         .venv/bin/pip3 install pytest
+  #         .venv/bin/pytest -vv tests
   # test_windows:
   #   name: "windows test: ${{ matrix.arch }}"
   #   runs-on: windows-latest
