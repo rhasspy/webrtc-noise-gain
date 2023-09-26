@@ -350,7 +350,7 @@ libraries = []
 system = platform.system().lower()
 machine = platform.machine().lower()
 system_cflags = []
-machine_cflags = []
+machine_cflags = ["-DWEBRTC_ARCH_LITTLE_ENDIAN"]
 
 have_neon = True
 
@@ -376,7 +376,11 @@ else:
 
 if machine in ("aarch64", "armv8", "arm64"):
     # Assume neon
-    machine_cflags += ["-DWEBRTC_ARCH_ARM64"]
+    machine_cflags += [
+        "-DWEBRTC_ARCH_ARM64",
+        "-DWEBRTC_ARCH_ARM_FAMILY",
+        "-DWEBRTC_ARCH_64_BITS",
+    ]
 
     if have_neon:
         machine_cflags += ["-DWEBRTC_HAS_NEON"]
@@ -399,6 +403,17 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
         "-mavx2",
         "-mfma",
     ]
+    if machine in ("x86_64", "amd64"):
+        machine_cflags += [
+            "-DWEBRTC_ARCH_X86_64",
+            "-DWEBRTC_ARCH_64_BITS",
+        ]
+    else:
+        machine_cflags += [
+            "-DWEBRTC_ARCH_X86",
+            "-DWEBRTC_ARCH_32_BITS",
+        ]
+
     webrtc_audio_processing_sources += [
         "aec3/adaptive_fir_filter_avx2.cc",
         "aec3/adaptive_fir_filter_erl_avx2.cc",
@@ -415,8 +430,11 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
         "resampler/sinc_resampler_avx2.cc",
     ]
 elif machine in ("armv7", "armv7l"):
-    # Assume neon
-    machine_cflags += ["-DWEBRTC_ARCH_ARM_V7"]
+    machine_cflags += [
+        "-DWEBRTC_ARCH_ARM_V7",
+        "-DWEBRTC_ARCH_ARM_FAMILY",
+        "-DWEBRTC_ARCH_32_BITS",
+    ]
     if have_neon:
         machine_cflags += ["-DWEBRTC_HAS_NEON", "-mfpu=neon"]
         common_audio_sources += [
@@ -431,7 +449,12 @@ elif machine in ("armv7", "armv7l"):
             "aecm/aecm_core_neon.cc",
         ]
 elif machine in ("armv6", "armhf", "armv6l"):
-    machine_cflags += ["-DWEBRTC_ARCH_ARM", "-DPFFFT_SIMD_DISABLE"]
+    machine_cflags += [
+        "-DWEBRTC_ARCH_ARM",
+        "-DWEBRTC_ARCH_ARM_FAMILY",
+        "-DWEBRTC_ARCH_32_BITS",
+        "-DPFFFT_SIMD_DISABLE",
+    ]
     common_audio_sources += [
         "signal_processing/filter_ar_fast_q12.c",
     ]
