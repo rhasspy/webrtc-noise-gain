@@ -365,7 +365,7 @@ elif system == "darwin":
     have_neon = False
 
     # Not using std::optional
-    absl_sources = ["absl/types/optional_test.cc"]
+    absl_sources = ["absl/types/bad_optional_access.cc"]
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
