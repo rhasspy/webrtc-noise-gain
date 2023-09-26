@@ -353,13 +353,15 @@ machine_cflags = []
 
 have_neon = True
 
+# Only for C++
+os.environ["CPPFLAGS"] = "-std=c++17"
+
 if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 elif system == "darwin":
     system_cflags += ["-DWEBRTC_MAC"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
-    os.environ["CC"] = "clang++"
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
@@ -442,7 +444,6 @@ else:
 ext_modules = [
     Pybind11Extension(
         name="webrtc_noise_gain_cpp",
-        language="c++",
         sources=[str(_DIR / "python.cpp")]
         + [str(_WEBRTC_DIR / "rtc_base" / f) for f in base_sources]
         + [str(_WEBRTC_DIR / "api" / f) for f in api_sources]
@@ -469,7 +470,6 @@ ext_modules = [
             str(_WEBRTC_DIR),
             str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1"),
         ],
-        cxx_std=17,
         libraries=libraries,
     ),
 ]
