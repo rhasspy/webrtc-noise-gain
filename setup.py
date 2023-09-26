@@ -344,6 +344,8 @@ common_cflags = [
 
 fft_sources = ["fft.c"]
 
+absl_sources = []
+
 # -----------------------------------------------------------------------------
 
 libraries = []
@@ -361,6 +363,9 @@ elif system == "darwin":
     system_cflags += ["-DWEBRTC_MAC", "-DWEBRTC_POSIX"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
+
+    # Not using std::optional
+    absl_sources = ["absl/types/optional_test.cc"]
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
@@ -523,7 +528,11 @@ ext_modules = [
         ]
         + [str(_WEBRTC_DIR / "third_party" / "pffft" / f) for f in pffft_sources]
         + [str(_WEBRTC_DIR / "third_party" / "rnnoise" / f) for f in rnnoise_sources]
-        + [str(_WEBRTC_DIR / "common_audio" / f) for f in common_audio_sources],
+        + [str(_WEBRTC_DIR / "common_audio" / f) for f in common_audio_sources]
+        + [
+            str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1" / f)
+            for f in absl_sources
+        ],
         extra_compile_args=common_cflags + system_cflags + machine_cflags,
         define_macros=[("VERSION_INFO", __version__)],
         include_dirs=[
