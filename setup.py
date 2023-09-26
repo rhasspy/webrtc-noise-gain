@@ -5,6 +5,7 @@ from pathlib import Path
 # Available at setup time due to pyproject.toml
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
+from setuptools._distutils.unixccompiler import UnixCCompiler
 
 _DIR = Path(__file__).parent
 _SOURCE_DIR = _DIR / "webrtc-audio-processing"
@@ -353,8 +354,6 @@ machine_cflags = []
 
 have_neon = True
 
-# Only for C++
-os.environ["CXXFLAGS"] = "-std=c++17"
 
 if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
@@ -441,19 +440,48 @@ else:
 
 # -----------------------------------------------------------------------------
 
+# https://stackoverflow.com/questions/47872981/python-extension-using-different-compiler-flags-for-a-c-parts-and-c-parts
+cpp_flags = ["-std=c++17"]
 
-class PatchedExtension(Pybind11Extension):
+
+class PatchedCompiler(UnixCCompiler):
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        _cc_args = cc_args
+
+        assert False, cc_args
+
+        # add the C++ flags for source files with extensions listed below
+        if os.path.splitext(src)[-1] in (".cpp", ".cxx", ".cc"):
+            _cc_args = cc_args + cpp_flags
+
+        UnixCCompiler._compile(self, obj, src, ext, _cc_args, extra_postargs, pp_opts)
+
+
+class PatchedBuildExt(build_ext):
+    def build_extensions(self, *args, **kwargs):
+        if self.compiler.compiler_type == "unix":
+            # Replace the compiler
+            old_compiler = self.compiler
+            self.compiler = PatchedCompiler()
+
+            # Copy its attributes
+            for attr, value in old_compiler.__dict__.items():
+                setattr(self.compiler, attr, value)
+        build_ext.build_extensions(self, *args, **kwargs)
+
+
+class PatchedPybind11Extension(Pybind11Extension):
     @property
     def cxx_std(self) -> int:
         return super().cxx_std
 
     @cxx_std.setter
     def cxx_std(self, level: int) -> None:
-        pass
+        pass  # Stop pollution of cflags
 
 
 ext_modules = [
-    PatchedExtension(
+    PatchedPybind11Extension(
         name="webrtc_noise_gain_cpp",
         language="c++",
         sources=[str(_DIR / "python.cpp")]
@@ -497,7 +525,7 @@ setup(
     long_description="",
     packages=["webrtc_noise_gain"],
     ext_modules=ext_modules,
-    cmdclass={"build_ext": build_ext},
+    cmdclass={"build_ext": PatchedBuildExt},
     zip_safe=False,
     python_requires=">=3.7",
 )
