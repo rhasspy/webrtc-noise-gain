@@ -343,11 +343,16 @@ common_cflags = [
 fft_sources = ["fft.c"]
 
 # Assume Linux
-system = platform.system()
-if system != "Linux":
+system = platform.system().lower()
+system_cflags = []
+
+if system == "linux":
+    system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
+elif system == "darwin":
+    system_cflags += ["-DWEBRTC_MAC"]
+else:
     raise ValueError(f"Unsupported system: {system}")
 
-system_cflags = ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 
 machine_cflags = []
 machine = platform.machine().lower()
@@ -442,8 +447,6 @@ ext_modules = [
             str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1"),
         ],
         cxx_std="17",
-        # library_dirs=[str(lib_dir)],
-        # libraries=["webrtc-audio-processing-1", "webrtc-audio-coding-1"],
     ),
 ]
 
