@@ -9,7 +9,7 @@ _DIR = Path(__file__).parent
 _SOURCE_DIR = _DIR / "webrtc-audio-processing"
 _WEBRTC_DIR = _SOURCE_DIR / "webrtc-audio-processing-1"
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # webrtc/
 #   rtc_base/
