@@ -361,6 +361,13 @@ elif system == "darwin":
     system_cflags += ["-DWEBRTC_MAC", "-DWEBRTC_POSIX"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
+
+    # SSE
+    common_audio_sources += [
+        "fir_filter_sse.cc",
+        "resampler/sinc_resampler_sse.cc",
+        "third_party/ooura/fft_size_128/ooura_fft_sse2.cc",
+    ]
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
