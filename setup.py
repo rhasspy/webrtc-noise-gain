@@ -366,7 +366,7 @@ if machine in ("aarch64", "armv8", "arm64"):
     webrtc_audio_processing_sources += [
         "aecm/aecm_core_neon.cc",
     ]
-elif machine in ("x86_64", "amd64", "x86", "i386"):
+elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
     machine_cflags += [
         "-DWEBRTC_ARCH_X86_FAMILY",
         "-DWEBRTC_ENABLE_AVX2",
@@ -403,7 +403,7 @@ elif machine in ("armv7", "armv7l"):
     webrtc_audio_processing_sources += [
         "aecm/aecm_core_neon.cc",
     ]
-elif machine in ("armv6", "armhf"):
+elif machine in ("armv6", "armhf", "armv6l"):
     machine_cflags += ["-DWEBRTC_ARCH_ARM", "-DPFFFT_SIMD_DISABLE"]
     common_audio_sources += [
         "signal_processing/filter_ar_fast_q12.c",
