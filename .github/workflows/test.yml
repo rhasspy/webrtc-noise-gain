@@ -54,3 +54,26 @@ jobs:
         run: |
           .venv/bin/pip3 install pytest
           .venv/bin/pytest -vv tests
+  test_windows:
+    name: "windows test: ${{ matrix.arch }}"
+    runs-on: windows-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64]
+    steps:
+      - uses: actions/checkout@v3
+      - name: venv
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip3 install --upgrade pip
+      - name: build
+        run: |
+          .venv/bin/pip3 wheel .
+      - name: install
+        run: |
+          .venv/bin/pip3 install --no-index -f . webrtc-noise-gain
+      - name: test
+        run: |
+          .venv/bin/pip3 install pytest
+          .venv/bin/pytest -vv tests

@@ -342,7 +342,9 @@ common_cflags = [
 
 fft_sources = ["fft.c"]
 
-# Assume Linux
+# -----------------------------------------------------------------------------
+
+libraries = []
 system = platform.system().lower()
 system_cflags = []
 
@@ -350,6 +352,16 @@ if system == "linux":
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 elif system == "darwin":
     system_cflags += ["-DWEBRTC_MAC"]
+elif system == "windows":
+    system_cflags += [
+        "-DWEBRTC_WIN",
+        "-D_WIN32",
+        "-U__STRICT_ANSI__",
+        "-D__STDC_FORMAT_MACROS=1",
+        "'-DNOMINMAX'",
+        "'-D_USE_MATH_DEFINES'",
+    ]
+    libraries += ["winmm"]
 else:
     raise ValueError(f"Unsupported system: {system}")
 
@@ -416,6 +428,7 @@ elif machine in ("armv6", "armhf", "armv6l"):
 else:
     raise ValueError(f"Unsupported machine: {machine}")
 
+# -----------------------------------------------------------------------------
 
 ext_modules = [
     Pybind11Extension(
@@ -446,7 +459,8 @@ ext_modules = [
             str(_WEBRTC_DIR),
             str(_SOURCE_DIR / "subprojects" / "abseil-cpp-20230125.1"),
         ],
-        cxx_std="17",
+        cxx_std=17,
+        libraries=libraries,
     ),
 ]
 
