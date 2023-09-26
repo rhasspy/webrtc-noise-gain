@@ -1,3 +1,4 @@
+import os
 import platform
 from pathlib import Path
 
@@ -358,6 +359,7 @@ elif system == "darwin":
     system_cflags += ["-DWEBRTC_MAC"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
+    os.environ["CC"] = "clang++"
 elif system == "windows":
     system_cflags += [
         "-DWEBRTC_WIN",
