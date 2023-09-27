@@ -41,14 +41,13 @@ jobs:
         id: macos_wheel
         run: |
           .venv/bin/pip3 wheel .
-          ls *.whl > ${GITHUB_OUTPUT}
+          echo "wheel=$(ls *.whl)" > ${GITHUB_OUTPUT}
       - name: upload
         uses: actions/upload-release-asset@v1
-        needs: macos_wheel
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ${{ needs.macos_wheel.outputs[0] }}
-          asset_name: ${{ needs.macos_wheel.outputs[0] }}
+          asset_path: ${{ steps.macos_wheel.outputs.wheel }}
+          asset_name: ${{ steps.macos_wheel.outputs.wheel }}
           asset_content_type: application/octet-stream
