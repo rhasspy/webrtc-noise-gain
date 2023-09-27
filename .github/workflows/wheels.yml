@@ -29,8 +29,6 @@ jobs:
     needs: create_release # we need to know the upload URL
     strategy:
       fail-fast: true
-      matrix:
-        arch: [x64, aarch64]
     steps:
       - uses: actions/checkout@v3
       - name: venv
