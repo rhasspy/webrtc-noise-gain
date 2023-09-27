@@ -1,3 +1,16 @@
+## 1.2.2
+
+- Remove AVX2 from x86
+
+## 1.2.1
+
+- Add macOS
+- Fix 32-bit ARM
+
+## 1.2.0
+
+- Add 32-bit ARM
+
 ## 1.1.0
 
 - Enable building from source without using meson

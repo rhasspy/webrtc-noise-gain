@@ -24,7 +24,7 @@ jobs:
           draft: false
           prerelease: false
   build_macos:
-    name: "macos test: ${{ matrix.arch }}"
+    name: "macos build: ${{ matrix.arch }}"
     runs-on: macos-latest
     needs: create_release # we need to know the upload URL
     strategy:
