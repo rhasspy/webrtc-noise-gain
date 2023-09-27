@@ -11,7 +11,7 @@ _DIR = Path(__file__).parent
 _SOURCE_DIR = _DIR / "webrtc-audio-processing"
 _WEBRTC_DIR = _SOURCE_DIR / "webrtc-audio-processing-1"
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 # webrtc/
 #   rtc_base/
@@ -358,6 +358,7 @@ system_cflags = []
 machine_cflags = ["-DWEBRTC_ARCH_LITTLE_ENDIAN"]
 
 have_neon = True
+have_avx2 = False  # disabled for older CPUs
 
 
 if system == "linux":
@@ -383,7 +384,7 @@ else:
     raise ValueError(f"Unsupported system: {system}")
 
 if machine in ("aarch64", "armv8", "arm64"):
-    # Assume neon
+    # 64-bit ARM
     machine_cflags += [
         "-DWEBRTC_ARCH_ARM64",
         "-DWEBRTC_ARCH_ARM_FAMILY",
@@ -391,6 +392,7 @@ if machine in ("aarch64", "armv8", "arm64"):
     ]
 
     if have_neon:
+        # Raspberry Pi 3/4
         machine_cflags += ["-DWEBRTC_HAS_NEON"]
         common_audio_sources += [
             "fir_filter_neon.cc",
@@ -404,24 +406,40 @@ if machine in ("aarch64", "armv8", "arm64"):
             "aecm/aecm_core_neon.cc",
         ]
 elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
+    # 32-bit/64-bit x86 and x86_64
     machine_cflags += [
         "-DWEBRTC_ARCH_X86_FAMILY",
-        "-DWEBRTC_ENABLE_AVX2",
         "-msse2",
-        "-mavx2",
         "-mfma",
     ]
+
+    if have_avx2:
+        # Advanced Vector Instructions
+        machine_cflags += [
+            "-DWEBRTC_ENABLE_AVX2",
+            "-mavx2",
+        ]
+
     if machine in ("x86_64", "amd64"):
+        # 64-bit x86_64
         machine_cflags += [
             "-DWEBRTC_ARCH_X86_64",
             "-DWEBRTC_ARCH_64_BITS",
         ]
     else:
+        # 32-bit x86
         machine_cflags += [
             "-DWEBRTC_ARCH_X86",
             "-DWEBRTC_ARCH_32_BITS",
         ]
 
+    common_audio_sources += [
+        "fir_filter_sse.cc",
+        "resampler/sinc_resampler_sse.cc",
+        "third_party/ooura/fft_size_128/ooura_fft_sse2.cc",
+    ]
+
+    # These have to be included, even if they aren't used
     webrtc_audio_processing_sources += [
         "aec3/adaptive_fir_filter_avx2.cc",
         "aec3/adaptive_fir_filter_erl_avx2.cc",
@@ -430,20 +448,18 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
         "aec3/vector_math_avx2.cc",
     ]
     common_audio_sources += [
-        "fir_filter_sse.cc",
-        "resampler/sinc_resampler_sse.cc",
-        "third_party/ooura/fft_size_128/ooura_fft_sse2.cc",
-        #
         "fir_filter_avx2.cc",
         "resampler/sinc_resampler_avx2.cc",
     ]
 elif machine in ("armv7", "armv7l"):
+    # 32-bit ARM
     machine_cflags += [
         "-DWEBRTC_ARCH_ARM_V7",
         "-DWEBRTC_ARCH_ARM_FAMILY",
         "-DWEBRTC_ARCH_32_BITS",
     ]
     if have_neon:
+        # Raspberry Pi 3/4
         machine_cflags += ["-DWEBRTC_HAS_NEON", "-mfpu=neon"]
         common_audio_sources += [
             "fir_filter_neon.cc",
@@ -457,6 +473,7 @@ elif machine in ("armv7", "armv7l"):
             "aecm/aecm_core_neon.cc",
         ]
 elif machine in ("armv6", "armhf", "armv6l"):
+    # 32-bit ARM (Raspberry Pi 1/2)
     machine_cflags += [
         "-DWEBRTC_ARCH_ARM",
         "-DWEBRTC_ARCH_ARM_FAMILY",

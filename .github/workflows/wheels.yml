@@ -1,0 +1,54 @@
+name: wheels
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+  build_macos:
+    name: "macos test: ${{ matrix.arch }}"
+    runs-on: macos-latest
+    needs: create_release # we need to know the upload URL
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [x64, aarch64]
+    steps:
+      - uses: actions/checkout@v3
+      - name: venv
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip3 install --upgrade pip
+      - name: build
+        id: macos_wheel
+        run: |
+          .venv/bin/pip3 wheel .
+          ls *.whl > ${GITHUB_OUTPUT}
+      - name: upload
+        uses: actions/upload-release-asset@v1
+        needs: macos_wheel
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.macos_wheel.outputs[0] }}
+          asset_name: ${{ needs.macos_wheel.outputs[0] }}
+          asset_content_type: application/octet-stream
