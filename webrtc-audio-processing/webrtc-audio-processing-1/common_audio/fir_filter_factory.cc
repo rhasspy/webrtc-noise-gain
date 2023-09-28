@@ -36,15 +36,17 @@ FIRFilter* CreateFirFilter(const float* coefficients,
 // If we know the minimum architecture at compile time, avoid CPU detection.
 #if defined(WEBRTC_ARCH_X86_FAMILY)
   // x86 CPU detection required.
-  if (GetCPUInfo(kAVX2)) {
-    filter =
-        new FIRFilterAVX2(coefficients, coefficients_length, max_input_length);
-  } else if (GetCPUInfo(kSSE2)) {
-    filter =
-        new FIRFilterSSE2(coefficients, coefficients_length, max_input_length);
-  } else {
-    filter = new FIRFilterC(coefficients, coefficients_length);
-  }
+  // if (GetCPUInfo(kAVX2)) {
+  //   filter =
+  //       new FIRFilterAVX2(coefficients, coefficients_length, max_input_length);
+  // } else if (GetCPUInfo(kSSE2)) {
+  //   filter =
+  //       new FIRFilterSSE2(coefficients, coefficients_length, max_input_length);
+  // } else {
+  //   filter = new FIRFilterC(coefficients, coefficients_length);
+  // }
+
+  filter = new FIRFilterC(coefficients, coefficients_length);
 #elif defined(WEBRTC_HAS_NEON)
   filter =
       new FIRFilterNEON(coefficients, coefficients_length, max_input_length);
