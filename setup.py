@@ -11,7 +11,7 @@ _DIR = Path(__file__).parent
 _SOURCE_DIR = _DIR / "webrtc-audio-processing"
 _WEBRTC_DIR = _SOURCE_DIR / "webrtc-audio-processing-1"
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 # webrtc/
 #   rtc_base/
@@ -410,14 +410,25 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
     machine_cflags += [
         "-DWEBRTC_ARCH_X86_FAMILY",
         "-msse2",
-        "-mfma",
     ]
 
     if have_avx2:
         # Advanced Vector Instructions
         machine_cflags += [
             "-DWEBRTC_ENABLE_AVX2",
+            "-mfma",
             "-mavx2",
+        ]
+        webrtc_audio_processing_sources += [
+            "aec3/adaptive_fir_filter_avx2.cc",
+            "aec3/adaptive_fir_filter_erl_avx2.cc",
+            "aec3/fft_data_avx2.cc",
+            "aec3/matched_filter_avx2.cc",
+            "aec3/vector_math_avx2.cc",
+        ]
+        common_audio_sources += [
+            "fir_filter_avx2.cc",
+            "resampler/sinc_resampler_avx2.cc",
         ]
 
     if machine in ("x86_64", "amd64"):
@@ -437,19 +448,6 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
         "fir_filter_sse.cc",
         "resampler/sinc_resampler_sse.cc",
         "third_party/ooura/fft_size_128/ooura_fft_sse2.cc",
-    ]
-
-    # These have to be included, even if they aren't used
-    webrtc_audio_processing_sources += [
-        "aec3/adaptive_fir_filter_avx2.cc",
-        "aec3/adaptive_fir_filter_erl_avx2.cc",
-        "aec3/fft_data_avx2.cc",
-        "aec3/matched_filter_avx2.cc",
-        "aec3/vector_math_avx2.cc",
-    ]
-    common_audio_sources += [
-        "fir_filter_avx2.cc",
-        "resampler/sinc_resampler_avx2.cc",
     ]
 elif machine in ("armv7", "armv7l"):
     # 32-bit ARM
