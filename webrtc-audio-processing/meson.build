@@ -91,6 +91,26 @@ elif host_system == 'linux'
   os_deps += [cc.find_library('rt', required : false)]
   os_deps += [dependency('threads')]
   have_posix = true
+elif (host_system == 'dragonfly' or host_system == 'freebsd' or
+      host_system == 'netbsd' or host_system == 'openbsd')
+  os_cflags += ['-DWEBRTC_BSD', '-DWEBRTC_THREAD_RR']
+  os_deps += [dependency('threads')]
+  have_posix = true
+elif (host_system == 'dragonfly' or host_system == 'freebsd' or
+      host_system == 'netbsd' or host_system == 'openbsd')
+  os_cflags += ['-DWEBRTC_BSD', '-DWEBRTC_THREAD_RR']
+  os_deps += [dependency('threads')]
+  have_posix = true
+elif (host_system == 'dragonfly' or host_system == 'freebsd' or
+      host_system == 'netbsd' or host_system == 'openbsd')
+  os_cflags += ['-DWEBRTC_BSD', '-DWEBRTC_THREAD_RR']
+  os_deps += [dependency('threads')]
+  have_posix = true
+elif (host_system == 'dragonfly' or host_system == 'freebsd' or
+      host_system == 'netbsd' or host_system == 'openbsd')
+  os_cflags += ['-DWEBRTC_BSD', '-DWEBRTC_THREAD_RR']
+  os_deps += [dependency('threads')]
+  have_posix = true
 elif host_system == 'windows'
   platform_cflags += ['-DWEBRTC_WIN', '-D_WIN32', '-U__STRICT_ANSI__']
   # this one is for MinGW to get format specifiers from inttypes.h in C++
