@@ -380,7 +380,7 @@ elif system == "windows":
         "'-D_USE_MATH_DEFINES'",
     ]
     libraries += ["winmm"]
-elif system == "freebsd":
+elif system == 'dragonfly' or system == 'freebsd' or system == 'netbsd' or system == 'openbsd':
     system_cflags += ["-DWEBRTC_BSD", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 else:
     raise ValueError(f"Unsupported system: {system}")
