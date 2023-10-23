@@ -1,15 +1,18 @@
 FROM quay.io/pypa/manylinux_2_28_x86_64 as build-amd64
 
+ENV LANG C.UTF-8
+
 FROM quay.io/pypa/manylinux_2_28_aarch64 as build-arm64
+
+ENV LANG C.UTF-8
+
+# -----------------------------------------------------------------------------
 
 ARG TARGETARCH
 ARG TARGETVARIANT
 FROM build-${TARGETARCH}${TARGETVARIANT} as build
 ARG TARGETARCH
 ARG TARGETVARIANT
-
-ENV LANG C.UTF-8
-ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /build
 
