@@ -15,6 +15,12 @@
 #include <sys/syscall.h>
 #endif
 
+#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__) // WEBRTC_BSD
+#include <pthread_np.h>
+#elif defined(__NetBSD__) // WEBRTC_BSD
+#include <lwp.h>
+#endif
+
 #if defined(WEBRTC_WIN)
 #include "rtc_base/arraysize.h"
 
@@ -39,6 +45,12 @@ PlatformThreadId CurrentThreadId() {
   return zx_thread_self();
 #elif defined(WEBRTC_LINUX)
   return syscall(__NR_gettid);
+#elif defined(__DragonFly__) || defined(__FreeBSD__) // WEBRTC_BSD
+  return pthread_getthreadid_np();
+#elif defined(__NetBSD__) // WEBRTC_BSD
+  return _lwp_self();
+#elif defined(__OpenBSD__) // WEBRTC_BSD
+  return getthrid();
 #elif defined(__EMSCRIPTEN__)
   return static_cast<PlatformThreadId>(pthread_self());
 #else
@@ -111,6 +123,10 @@ void SetCurrentThreadName(const char* name) {
   prctl(PR_SET_NAME, reinterpret_cast<unsigned long>(name));  // NOLINT
 #elif defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
   pthread_setname_np(name);
+#elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__) // WEBRTC_BSD
+  pthread_set_name_np(pthread_self(), name);
+#elif defined(__NetBSD__) // WEBRTC_BSD
+  pthread_setname_np(pthread_self(), "%s", (void*)name);
 #endif
 }
 
