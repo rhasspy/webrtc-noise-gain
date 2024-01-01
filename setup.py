@@ -1,13 +1,15 @@
 import os
 import platform
+import subprocess
 from pathlib import Path
 
 # Available at setup time due to pyproject.toml
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 from setuptools._distutils.unixccompiler import UnixCCompiler
+from setuptools._distutils._msvccompiler import MSVCCompiler
 
-_DIR = Path(__file__).parent
+_DIR = Path('.')
 _SOURCE_DIR = _DIR / "webrtc-audio-processing"
 _WEBRTC_DIR = _SOURCE_DIR / "webrtc-audio-processing-1"
 
@@ -45,9 +47,6 @@ base_sources = [
     "system/file_wrapper.cc",
     "time_utils.cc",
     "zero_memory.cc",
-] + [
-    # posix
-    "synchronization/rw_lock_posix.cc",
 ]
 
 api_sources = [
@@ -362,8 +361,10 @@ have_avx2 = False  # disabled for older CPUs
 
 
 if system == "linux":
+    base_sources += ["synchronization/rw_lock_posix.cc"]
     system_cflags += ["-DWEBRTC_LINUX", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 elif system == "darwin":
+    base_sources += ["synchronization/rw_lock_posix.cc"]
     system_cflags += ["-DWEBRTC_MAC", "-DWEBRTC_POSIX"]
     machine = "arm64"  # assume cross-compiling
     have_neon = False
@@ -371,16 +372,21 @@ elif system == "darwin":
     # Not using std::optional
     absl_sources = ["absl/types/bad_optional_access.cc"]
 elif system == "windows":
+    base_sources += ["synchronization/rw_lock_win.cc"]
     system_cflags += [
+        "/std:c++17",
         "-DWEBRTC_WIN",
         "-D_WIN32",
         "-U__STRICT_ANSI__",
         "-D__STDC_FORMAT_MACROS=1",
-        "'-DNOMINMAX'",
-        "'-D_USE_MATH_DEFINES'",
+        "-DNOMINMAX",
+        "-D_USE_MATH_DEFINES",
+        "-DABSL_USES_STD_OPTIONAL",
+        "-DABSL_USES_STD_STRING_VIEW",
     ]
     libraries += ["winmm"]
 elif system == 'dragonfly' or system == 'freebsd' or system == 'netbsd' or system == 'openbsd':
+    base_sources += ["synchronization/rw_lock_posix.cc"]
     system_cflags += ["-DWEBRTC_BSD", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 else:
     raise ValueError(f"Unsupported system: {system}")
@@ -411,7 +417,7 @@ elif machine in ("x86_64", "amd64", "x86", "i386", "i686"):
     # 32-bit/64-bit x86 and x86_64
     machine_cflags += [
         "-DWEBRTC_ARCH_X86_FAMILY",
-        "-msse2",
+        # "-msse2",
     ]
 
     if have_avx2:
@@ -499,6 +505,17 @@ class PatchedCompiler(UnixCCompiler):
 
         UnixCCompiler._compile(self, obj, src, ext, _cc_args, extra_postargs, pp_opts)
 
+class PatchedMSCompiler(MSVCCompiler):
+    def spawn(self, cmd):
+        if cmd[0] == self.linker:
+            params_filepath = os.path.join('.', 'build', "linkparams.txt")
+
+            with open(params_filepath, 'xt') as fp:
+                fp.write(subprocess.list2cmdline(cmd[1:]))
+            
+            super().spawn([cmd[0], f"@{params_filepath}"])
+        else:
+            super().spawn(cmd)
 
 class PatchedBuildExt(build_ext):
     def build_extensions(self, *args, **kwargs):
@@ -506,6 +523,14 @@ class PatchedBuildExt(build_ext):
             # Replace the compiler
             old_compiler = self.compiler
             self.compiler = PatchedCompiler()
+
+            # Copy its attributes
+            for attr, value in old_compiler.__dict__.items():
+                setattr(self.compiler, attr, value)
+        elif self.compiler.compiler_type == "msvc":
+            # Replace the compiler
+            old_compiler = self.compiler
+            self.compiler = PatchedMSCompiler()
 
             # Copy its attributes
             for attr, value in old_compiler.__dict__.items():
