@@ -472,8 +472,8 @@ elif machine in ("armv7", "armv7l"):
         webrtc_audio_processing_sources += [
             "aecm/aecm_core_neon.cc",
         ]
-elif machine in ("armv6", "armhf", "armv6l"):
-    # 32-bit ARM (Raspberry Pi 1/2)
+elif machine in ("armv6", "armhf", "armv6l", "armv5tel"):
+    # 32-bit ARM (Raspberry Pi 1/2, Kirkwood)
     machine_cflags += [
         "-DWEBRTC_ARCH_ARM",
         "-DWEBRTC_ARCH_ARM_FAMILY",
