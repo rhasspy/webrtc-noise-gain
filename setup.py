@@ -575,4 +575,7 @@ setup(
     cmdclass={"build_ext": PatchedBuildExt},
     zip_safe=False,
     python_requires=">=3.7",
+    classifiers=[
+        "License :: OSI Approved :: MIT License"
+    ],
 )
