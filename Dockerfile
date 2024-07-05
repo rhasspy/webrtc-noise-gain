@@ -17,7 +17,7 @@ ARG TARGETVARIANT
 WORKDIR /build
 
 COPY ./ ./
-RUN for version in 7 8 9 10 11; do \
+RUN for version in 7 8 9 10 11 12; do \
     "python3.${version}" -m venv ".venv_${version}" && \
     source ".venv_${version}"/bin/activate && \
     pip3 install --upgrade pip && \
@@ -27,7 +27,7 @@ RUN for version in 7 8 9 10 11; do \
 
 WORKDIR /test
 COPY ./tests/ ./tests/
-RUN for version in 7 8 9 10 11; do \
+RUN for version in 7 8 9 10 11 12; do \
     "python3.${version}" -m venv ".venv_${version}" && \
     source ".venv_${version}"/bin/activate && \
     pip3 install --upgrade pip && \
