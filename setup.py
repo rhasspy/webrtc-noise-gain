@@ -380,7 +380,7 @@ elif system == "windows":
         "'-D_USE_MATH_DEFINES'",
     ]
     libraries += ["winmm"]
-elif system == 'dragonfly' or system == 'freebsd' or system == 'netbsd' or system == 'openbsd':
+elif system in ("dragonfly", "freebsd", "netbsd", "openbsd"):
     system_cflags += ["-DWEBRTC_BSD", "-DWEBRTC_THREAD_RR", "-DWEBRTC_POSIX"]
 else:
     raise ValueError(f"Unsupported system: {system}")
@@ -575,7 +575,5 @@ setup(
     cmdclass={"build_ext": PatchedBuildExt},
     zip_safe=False,
     python_requires=">=3.7",
-    classifiers=[
-        "License :: OSI Approved :: MIT License"
-    ],
+    classifiers=["License :: OSI Approved :: MIT License"],
 )
