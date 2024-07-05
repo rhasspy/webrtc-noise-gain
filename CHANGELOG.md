@@ -1,3 +1,13 @@
+## 1.2.4
+
+- Fixes for BSDs
+- Fix compile on MUSL
+- Update license classifier in `setup.py`
+
+## 1.2.3
+
+- Remove `-mfma` from compilation
+
 ## 1.2.2
 
 - Remove AVX2 from x86
