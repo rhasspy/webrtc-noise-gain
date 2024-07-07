@@ -1,3 +1,7 @@
+## 1.2.5
+
+- Fix sdist
+
 ## 1.2.4
 
 - Fixes for BSDs
