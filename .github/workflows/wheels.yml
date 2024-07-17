@@ -23,20 +23,30 @@ jobs:
           release_name: ${{ github.ref }}
           draft: false
           prerelease: false
-  build_macos:
-    name: "macos build: ${{ matrix.arch }}"
-    runs-on: macos-latest
-    needs: create_release # we need to know the upload URL
+  build:
+    name: "Build: Python ${{ matrix.python-version }} on ${{ matrix.os }}"
     strategy:
-      fail-fast: true
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        python-version: [ "3.11", "3.12" ]
+        include:
+          - os: "macos-latest"
+            python-version: "native"
+    runs-on: ${{ matrix.os }}
+    needs: create_release # we need to know the upload URL
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        if: matrix.python-version != 'native' # To build cp312-cp312-macosx_14_0_arm64.whl
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: venv
         run: |
           python3 -m venv .venv
           .venv/bin/pip3 install --upgrade pip
       - name: build
-        id: macos_wheel
+        id: wheel
         run: |
           .venv/bin/pip3 wheel .
           echo "wheel=$(ls *.whl)" > ${GITHUB_OUTPUT}
@@ -46,6 +56,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.macos_wheel.outputs.wheel }}
-          asset_name: ${{ steps.macos_wheel.outputs.wheel }}
+          asset_path: ${{ steps.wheel.outputs.wheel }}
+          asset_name: ${{ steps.wheel.outputs.wheel }}
           asset_content_type: application/octet-stream
