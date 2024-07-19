@@ -29,7 +29,6 @@ jobs:
           - os: "macos-latest"
             python-version: "native"
     runs-on: ${{ matrix.os }}
-    needs: create_release # we need to know the upload URL
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
